@@ -1,0 +1,51 @@
+ManifestFileVersion: 0
+CRC: 1915624547
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: b6d775b9c9d5bbabaf04cb992a62c2e4
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: fc6ff013a0cc010a285dbd7bb1507712
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: b6d775b9c9d5bbabaf04cb992a62c2e4
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 23
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 33
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 65
+  Script: {instanceID: 0}
+- Class: 82
+  Script: {instanceID: 0}
+- Class: 83
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: c30496d6ae6d6f907456e10a94e01ec6, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 120
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/HookGunItem.asset
+- Assets/RopeMat.mat
+Dependencies: []

@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 768222170
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: hookgunitem
+      Dependencies: {}

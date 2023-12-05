@@ -1,0 +1,52 @@
+ManifestFileVersion: 0
+CRC: 3188637505
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 9ecf32f23c85bdf3411f03a88df32c57
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 0c24a1be10c42dec0c2f6eb55b41059b
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: 9ecf32f23c85bdf3411f03a88df32c57
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 23
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 33
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 54
+  Script: {instanceID: 0}
+- Class: 65
+  Script: {instanceID: 0}
+- Class: 83
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: c30496d6ae6d6f907456e10a94e01ec6, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 0bf1473be2fdebe220e46d27c67438ea, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/HookGunItem.asset
+- Assets/HGSprite.PNG
+- Assets/HookGunGO.prefab
+Dependencies: []
