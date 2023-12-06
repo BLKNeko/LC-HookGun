@@ -100,19 +100,25 @@ namespace HookGun
             ///public PlayerControllerB[] players;
 
             public Transform gunTip;
-            public LayerMask whatIsGrappleable = 1 << 6 | 1 << 8 | 1 << 9 | 1 << 11 | 1 << 12 | 1 << 20 | 1 << 25 | 1 << 26;
+            //public LayerMask whatIsGrappleable = 1 << 6 | 1 << 8 | 1 << 9 | 1 << 11 | 1 << 12 | 1 << 20 | 1 << 21 | 1 << 24 | 1 << 25 | 1 << 26 | 1 << 27 | 1 << 28;
+            //public LayerMask whatIsGrappleable;
+            public LayerMask whatIsGrappleable = 1 << 0 | 1 << 8 | 1 << 9 | 1 << 12 | 1 << 15 | 1 << 25 | 1 << 26 | 1 << 27 | 1 << 28;
+            public LayerMask whatIsGrappleableToPull = 1 << 6 | 1 << 20;
             public LineRenderer lr;
 
             public float maxGrappleDistance = 60f;
             public float grappleDelayTime = 1f;
             public float overshootYAxis = 1.5f;
             public float HookSpeed = 50f;
+            public float OkDistance = 0.5f;
+            public float HookmaxTimer = 6f;
 
             public float HookTimer = 0;
 
             public float smoothTime = 1.3f;
 
             private bool grappling;
+            private bool grapplingSlowY = false;
 
             public static bool NoDmg = false;
 
@@ -183,22 +189,27 @@ namespace HookGun
 
             }
 
+ 
+
             public override void Update()
             {
                 base.Update();
+
 
                 if (grappling && targetPosition != null && targetPosition != Vector3.zero && !base.playerHeldBy.isPlayerDead)
                 {
                     //Debug.Log("minVelocityToTakeDamage");
                     //Debug.Log(base.playerHeldBy.minVelocityToTakeDamage);
                     //base.playerHeldBy.minVelocityToTakeDamage = 9999f;
-                    NoDmg = true;
+
+                    if (!base.playerHeldBy.isInsideFactory)
+                        NoDmg = true;
 
 
 
-                    if (HookTimer >= 6f)
+                    if (HookTimer >= HookmaxTimer)
                     {
-                        grappling = false;
+                        //grappling = false;
                         Invoke(nameof(backToNormal), 1f);
                         HookTimer = 0f;
                     }
@@ -207,32 +218,57 @@ namespace HookGun
                         HookTimer += Time.fixedDeltaTime;
                     }
 
-                    if ((Vector3.Distance(base.playerHeldBy.transform.position, targetPosition) >= 0.5f))
+                    if ((Vector3.Distance(base.playerHeldBy.transform.position, targetPosition) >= OkDistance))
                     {
-                        HookSpeed = 50f;
+
+                        if (base.playerHeldBy.isInsideFactory)
+                            HookSpeed = 40f;
+                        else
+                            HookSpeed = 50f;
 
 
                         forces = Vector3.Normalize(targetPosition - base.playerHeldBy.transform.position) * HookSpeed;
 
-                        forces.y = forces.y * 1.5f;
+                        if (base.playerHeldBy.isInsideFactory)
+                            forces.y = forces.y * 2f;
+                        else
+                            forces.y = forces.y * 1.5f;
 
 
                     }
                     else
                     {
-                        HookSpeed = 0f;
-                        forces = Vector3.zero;
+                        //HookSpeed = 0f;
+                        //forces = Vector3.zero;
+                        grapplingSlowY = true;
                         grappling = false;
                         targetPosition = Vector3.zero;
-                        Invoke(nameof(backToNormal), 3f);
+                        //Invoke(nameof(backToNormal), 3f);
 
                     }
 
 
                 }
 
-                playerHeldBy.externalForces += forces;
+                if (!playerHeldBy.thisController.isGrounded && grapplingSlowY)
+                {
+                    Debug.Log("Slow on air");
+                    forces.y = Vector3.Lerp(forces, Vector3.zero, Time.deltaTime * 0.5f).y;
+                    forces.x = 0f;
+                    forces.z = 0f;
+                }
+                else if (playerHeldBy.thisController.isGrounded && grapplingSlowY)
+                {
+                    HookSpeed = 0f;
+                    forces = Vector3.zero;
+                    grapplingSlowY = false;
+                    Invoke(nameof(backToNormal), 1f);
+                    //playerHeldBy.thisController.attachedRigidbody.drag = 1f;
 
+                }
+
+
+                playerHeldBy.externalForces += forces;
 
             }
 
@@ -246,20 +282,36 @@ namespace HookGun
 
                 Debug.Log("Item active");
 
-
-                if (insertedBattery.charge >= 0.1f)
+                if (base.playerHeldBy.isInsideFactory)
                 {
-                    //insertedBattery.charge -= 0.1f;
-                    if (insertedBattery.charge < 0.1f) insertedBattery.charge = 0;
+                    OkDistance = 2f;
+                    HookmaxTimer = 4f;
+                }
+                else
+                {
+                    OkDistance = 0.5f;
+                    HookmaxTimer = 6f;
+                }
+                    
+
+
+
+
+                if (insertedBattery.charge >= 0.02f)
+                {
+                    insertedBattery.charge -= 0.02f;
+                    if (insertedBattery.charge < 0.02f) insertedBattery.charge = 0;
 
                     //audioSource.PlayOneShot(shootSound);
-
+                    audioSource.PlayOneShot(Assets.ShootSFX);
                     StartGrapple();
 
 
 
 
                 }
+                else
+                    audioSource.PlayOneShot(Assets.NoAmmoSFX);
 
 
                 // CROSSHAIR
@@ -299,7 +351,11 @@ namespace HookGun
 
                 LineRenderer Trail = Instantiate(this, this.gameObject.transform.GetChild(0)).GetComponent<LineRenderer>();
 
+                //whatIsGrappleable = base.playerHeldBy.GetComponent<LayerMask>();
 
+                Debug.Log("LayerMask:");
+
+                Debug.Log(whatIsGrappleable);
 
                 RaycastHit hit;
                 if (Physics.Raycast(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, out hit, maxGrappleDistance, whatIsGrappleable))
@@ -341,7 +397,7 @@ namespace HookGun
                     targetPosition = position;
                     grappling = true;
 
-
+                    audioSource.PlayOneShot(Assets.HitSFX);
 
                 }
                 else
@@ -349,6 +405,10 @@ namespace HookGun
                     //grapplePoint = transform.position + transform.forward * maxGrappleDistance;
 
                     Debug.Log("RatCast Miss");
+
+                    audioSource.PlayOneShot(Assets.MissSFX);
+
+                    Trail.gameObject.AddComponent<LineRendererFadeOut>();
 
                     //SpawnTrail(Trail, hit.point);
 
@@ -359,7 +419,7 @@ namespace HookGun
             private void SpawnTrail(LineRenderer Trail, Vector3 HitPoint)
             {
                 Trail.SetPositions(new Vector3[2] { this.gameObject.transform.GetChild(0).position, HitPoint });
-                Trail.gameObject.AddComponent<LineRendererFadeOut>();
+                //Trail.gameObject.AddComponent<LineRendererFadeOut>();
             }
 
 
@@ -436,6 +496,11 @@ namespace HookGun
 
             public static Sprite HGSprite;
 
+            public static AudioClip ShootSFX;
+            public static AudioClip HitSFX;
+            public static AudioClip MissSFX;
+            public static AudioClip NoAmmoSFX;
+
             public static Mesh HGMesh;
             public static Mesh HOMesh;
 
@@ -443,7 +508,7 @@ namespace HookGun
             {
                 if (mainAssetBundle == null)
                 {
-                    using (var assetStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("JetSkates." + assetbundleName))
+                    using (var assetStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("HookGun." + assetbundleName))
                     {
                         mainAssetBundle = AssetBundle.LoadFromStream(assetStream);
                     }
@@ -463,6 +528,11 @@ namespace HookGun
 
 
                 HGSprite = mainAssetBundle.LoadAsset<Sprite>("HGSprite");
+
+                ShootSFX = mainAssetBundle.LoadAsset<AudioClip>("ShootSFX");
+                HitSFX = mainAssetBundle.LoadAsset<AudioClip>("HitSFX");
+                MissSFX = mainAssetBundle.LoadAsset<AudioClip>("MissSFX");
+                NoAmmoSFX = mainAssetBundle.LoadAsset<AudioClip>("NoAmmoSFX");
 
                 HGItem = mainAssetBundle.LoadAsset<Item>("HookGunItem");
 
