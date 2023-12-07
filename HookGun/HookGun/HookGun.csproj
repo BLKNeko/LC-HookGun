@@ -90,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HookGunPlugin.cs" />
+    <Compile Include="Patches\JumpPatch.cs" />
     <Compile Include="Patches\AllowDeathPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

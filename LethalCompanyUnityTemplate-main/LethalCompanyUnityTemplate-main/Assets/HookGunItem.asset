@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c30496d6ae6d6f907456e10a94e01ec6, type: 3}
   m_Name: HookGunItem
   m_EditorClassIdentifier: 
-  itemId: 84
-  itemName: HG
+  itemId: 84048
+  itemName: HookGun
   spawnPositionTypes: []
   twoHanded: 0
   twoHandedAnimation: 0
@@ -24,7 +24,7 @@ MonoBehaviour:
   itemSpawnsOnGround: 1
   isConductiveMetal: 1
   isScrap: 0
-  creditsWorth: 0
+  creditsWorth: 15
   lockedInDemo: 0
   highestSalePercentage: 0
   maxValue: 0
@@ -51,7 +51,7 @@ MonoBehaviour:
   saveItemVariable: 1
   isDefensiveWeapon: 1
   toolTips: []
-  verticalOffset: 0
+  verticalOffset: 0.4
   floorYOffset: 0
   allowDroppingAheadOfPlayer: 0
   restingRotation: {x: 0, y: 0, z: 0}
