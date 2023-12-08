@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using GameNetcodeStuff;
 using HarmonyLib;
@@ -25,13 +26,18 @@ namespace HookGun
 
         private const string MODUID = "com.BLKNeko.HookGun";
         private const string MODNAME = "HookGun";
-        private const string MODVERSION = "1.0.0.0";
+        private const string MODVERSION = "1.1.1.0";
 
         private readonly Harmony harmony = new Harmony(MODUID);
 
         private static HookGunPlugin Instance;
 
         internal ManualLogSource mls;
+
+
+        public static ConfigEntry<int> itemPrice { get; set; }
+
+
 
 
         void Awake()
@@ -72,6 +78,16 @@ namespace HookGun
 
 
 
+            //-----------------CONFIGURATION ------------------
+
+            itemPrice = Config.Bind<int>(
+            "ItemPrice",
+            "Price",
+                25,
+            "This is the item price, my default is 25, [INTEGER 1,2,30...]"
+            );
+
+
 
             //Debug.Log("HGItem");
             //Debug.Log(Assets.HGItem);
@@ -81,7 +97,7 @@ namespace HookGun
             HookGunScript HScript = TestHook.spawnPrefab.AddComponent<HookGunScript>();
             HScript.itemProperties = TestHook;
 
-            Items.RegisterShopItem(TestHook, 25);
+            Items.RegisterShopItem(TestHook, itemPrice.Value);
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(TestHook.spawnPrefab);
 
 
@@ -104,8 +120,14 @@ namespace HookGun
             public Transform gunTip;
             //public LayerMask whatIsGrappleable = 1 << 6 | 1 << 8 | 1 << 9 | 1 << 11 | 1 << 12 | 1 << 20 | 1 << 21 | 1 << 24 | 1 << 25 | 1 << 26 | 1 << 27 | 1 << 28;
             //public LayerMask whatIsGrappleable;
-            public LayerMask whatIsGrappleable = 1 << 0 | 1 << 8 | 1 << 9 | 1 << 12 | 1 << 15 | 1 << 25 | 1 << 26 | 1 << 27;
+            public LayerMask whatIsGrappleable = 1 << 8 | 1 << 9 | 1 << 12 | 1 << 15 | 1 << 25 | 1 << 26 | 1 << 27;
             public LayerMask whatIsGrappleableToPull = 1 << 6 | 1 << 20;
+
+            // 0 - various random objects
+            // 8 - floor
+            // 9 - stair
+
+
             public LineRenderer lr;
 
             public float maxGrappleDistance = 60f;
@@ -120,6 +142,7 @@ namespace HookGun
             public float smoothTime = 1.3f;
 
             public static bool grappling = false;
+            public static bool pulling = false;
             public static bool shoudFall;
             public static bool DisableJump;
             public static bool DisableFall;
@@ -133,6 +156,12 @@ namespace HookGun
 
             private Vector3 forces = Vector3.zero;
 
+            private Vector3 forcesP = Vector3.zero;
+
+            private GameObject pullingGameObject;
+
+            RaycastHit hit;
+
 
 
             //grabanimation: HoldLung
@@ -143,14 +172,14 @@ namespace HookGun
 
                 //Debug.Log("Item aWAKE");
 
-                HookGO = GetComponentInChildren<MeshRenderer>();
+                //HookGO = GetComponentInChildren<MeshRenderer>();
 
                 audioSource = GetComponent<AudioSource>();
                 roundManager = FindObjectOfType<RoundManager>();
 
                 grabbable = true;
                 grabbableToEnemies = true;
-                useCooldown = 3f;
+                useCooldown = 2f;
                 insertedBattery = new Battery(false, 1);
                 mainObjectRenderer = GetComponent<MeshRenderer>();
 
@@ -188,68 +217,115 @@ namespace HookGun
                 //
                 //}
 
-
-                if (grappling && targetPosition != null && targetPosition != Vector3.zero && !base.playerHeldBy.isPlayerDead)
+                if (this.isHeld)
                 {
 
 
-                    if (!base.playerHeldBy.isInsideFactory)
-                        NoDmg = true;
+                    if (pulling && targetPosition != null && targetPosition != Vector3.zero && !base.playerHeldBy.isPlayerDead)
+                    {
+
+                            //pullingGameObject.transform.position = Vector3.MoveTowards(targetPosition, base.playerHeldBy.transform.position, maxGrappleDistance);
+
+                            //pullingGameObject.GetComponent<GrabbableObject>().targetFloorPosition = base.playerHeldBy.transform.position;
+
+                            pullingGameObject.GetComponent<GrabbableObject>().transform.position = base.playerHeldBy.transform.position + new Vector3(0.2f,0.8f,0.2f);
+
+                            pullingGameObject.GetComponent<GrabbableObject>().FallToGround(false);
+
+
+
+
+                            HookTimer = 0f;
+                            HookSpeed = 0f;
+                            forcesP = Vector3.zero;
+                            pulling = false;
+                            targetPosition = Vector3.zero;
+                            Invoke(nameof(backToNormal), 0.5f);
+
+
+
+                    }
+
+
+
+
+                    //grapling -----------------------------
+
+                    if (grappling && targetPosition != null && targetPosition != Vector3.zero && !base.playerHeldBy.isPlayerDead)
+                    {
+
+
+                        if (!base.playerHeldBy.isInsideFactory)
+                            NoDmg = true;
+
+
+
+                        if (HookTimer >= HookmaxTimer)
+                        {
+                            //grappling = false;
+                            Invoke(nameof(backToNormal), 1f);
+                            Invoke(nameof(enableDamage), 2f);
+                            HookTimer = 0f;
+                        }
+                        else
+                        {
+                            HookTimer += Time.fixedDeltaTime;
+                        }
+
+                        if ((Vector3.Distance(base.playerHeldBy.transform.position, targetPosition) >= OkDistance))
+                        {
+
+
+
+                            if (base.playerHeldBy.isInsideFactory)
+                                HookSpeed = 38f;
+                            else
+                                HookSpeed = 45f;
+
+
+                            forces = Vector3.Normalize(targetPosition - base.playerHeldBy.transform.position) * HookSpeed;
+
+                            if (base.playerHeldBy.isInsideFactory)
+                                forces.y = forces.y * 2f;
+                            else
+                                forces.y = forces.y * 1.5f;
+
+                            playerHeldBy.externalForces.x += forces.x;
+                            playerHeldBy.externalForces.z += forces.z;
+                            playerHeldBy.externalForces.y += forces.y;
+
+
+
+                        }
+                        else
+                        {
+
+                            //Debug.Log("Reach >>>>>>>>");
+                            HookTimer = 0f;
+                            HookSpeed = 0f;
+                            forces = Vector3.zero;
+                            grappling = false;
+                            targetPosition = Vector3.zero;
+                            Invoke(nameof(backToNormal), 2f);
+                            Invoke(nameof(enableDamage), 5f);
+
+                        }
+
+
+                    }
+
 
                     
 
-                    if (HookTimer >= HookmaxTimer)
-                    {
-                        //grappling = false;
-                        Invoke(nameof(backToNormal), 1f);
-                        Invoke(nameof(enableDamage), 2f);
-                        HookTimer = 0f;
-                    }
-                    else
-                    {
-                        HookTimer += Time.fixedDeltaTime;
-                    }
-
-                    if ((Vector3.Distance(base.playerHeldBy.transform.position, targetPosition) >= OkDistance))
-                    {
-
-                        
-
-                        if (base.playerHeldBy.isInsideFactory)
-                            HookSpeed = 40f;
-                        else
-                            HookSpeed = 48f;
 
 
-                        forces = Vector3.Normalize(targetPosition - base.playerHeldBy.transform.position) * HookSpeed;
 
-                        if (base.playerHeldBy.isInsideFactory)
-                            forces.y = forces.y * 2f;
-                        else
-                            forces.y = forces.y * 1.5f;
-
-
-                    }
-                    else
-                    {
-
-                        //Debug.Log("Reach >>>>>>>>");
-                        HookSpeed = 0f;
-                        forces = Vector3.zero;
-                        grappling = false;
-                        targetPosition = Vector3.zero;
-                        Invoke(nameof(backToNormal), 3f);
-                        Invoke(nameof(enableDamage), 5f);
-
-                    }
-
-
+                    //-----------
                 }
 
 
-                playerHeldBy.externalForces.x += forces.x;
-                playerHeldBy.externalForces.z += forces.z;
-                playerHeldBy.externalForces.y += forces.y;
+
+                
 
 
             }
@@ -260,7 +336,7 @@ namespace HookGun
             {
                 base.ItemActivate(used, buttonDown);
 
-                Debug.Log("Item active");
+                //Debug.Log("Item active");
 
                 if (base.playerHeldBy.isInsideFactory)
                 {
@@ -269,7 +345,7 @@ namespace HookGun
                 }
                 else
                 {
-                    OkDistance = 0.5f;
+                    OkDistance = 1f;
                     HookmaxTimer = 6f;
                 }
                     
@@ -289,6 +365,7 @@ namespace HookGun
 
 
 
+
                 }
                 else
                     audioSource.PlayOneShot(Assets.NoAmmoSFX);
@@ -296,26 +373,26 @@ namespace HookGun
 
                 // CROSSHAIR
 
-                GameObject myObject = new GameObject("bar");
-                //GameObject myObject = Modules.Assets.MoraleBar;
-
-
-
-                myObject.transform.SetParent(base.playerHeldBy.gameplayCamera.transform);
-                RectTransform rectTransform = myObject.AddComponent<RectTransform>();
-                //rectTransform.anchorMin = Vector2.zero;
-                //rectTransform.anchorMax = Vector2.one;
-                rectTransform.anchorMin = new Vector2(0.57f, 0.7f);
-                rectTransform.anchorMax = new Vector2(0.782f, 0.72f);
-                //rectTransform.sizeDelta = Vector2.zero;
-                rectTransform.sizeDelta = new Vector2(0.2f, 0.2f);
-                //rectTransform.anchoredPosition = Vector2.zero;
-
-
-
-                myObject.AddComponent<Image>();
-                myObject.GetComponent<Image>().sprite = Assets.HGSprite;
-
+                //GameObject myObject = new GameObject("bar");
+                ////GameObject myObject = Modules.Assets.MoraleBar;
+                //
+                //
+                //
+                //myObject.transform.SetParent(base.playerHeldBy.gameplayCamera.transform);
+                //RectTransform rectTransform = myObject.AddComponent<RectTransform>();
+                ////rectTransform.anchorMin = Vector2.zero;
+                ////rectTransform.anchorMax = Vector2.one;
+                //rectTransform.anchorMin = new Vector2(0.57f, 0.7f);
+                //rectTransform.anchorMax = new Vector2(0.782f, 0.72f);
+                ////rectTransform.sizeDelta = Vector2.zero;
+                //rectTransform.sizeDelta = new Vector2(0.2f, 0.2f);
+                ////rectTransform.anchoredPosition = Vector2.zero;
+                //
+                //
+                //
+                //myObject.AddComponent<Image>();
+                //myObject.GetComponent<Image>().sprite = Assets.HGSprite;
+                //
 
 
             }
@@ -337,8 +414,43 @@ namespace HookGun
 
                 //Debug.Log(whatIsGrappleable);
 
-                RaycastHit hit;
-                if (Physics.Raycast(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, out hit, maxGrappleDistance, whatIsGrappleable))
+                //RaycastHit hit;
+
+
+                if (Physics.Raycast(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, out hit, maxGrappleDistance, whatIsGrappleableToPull))
+                {
+                    grapplePoint = hit.point;
+
+                    SpawnTrail(Trail, hit.point);
+
+                    Debug.Log("hit gameobject layer");
+                    Debug.Log(hit.transform.gameObject.layer);
+
+
+                    targetPosition = grapplePoint;
+
+
+                    Vector3 position = base.playerHeldBy.transform.position;
+                    Vector3 offsetToHit = position - hit.point;
+                    offsetToHit.Normalize();
+                    offsetToHit *= 1;
+                    position = hit.point + offsetToHit;
+
+                    position.y = position.y * 1.1f;
+
+                    targetPosition = position;
+
+                    pulling = true;
+
+                    pullingGameObject = hit.transform.gameObject;
+
+
+                    audioSource.PlayOneShot(Assets.HitSFX);
+
+                    Debug.Log("PULLING");
+
+                }
+                else if (Physics.Raycast(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, out hit, maxGrappleDistance, whatIsGrappleable))
                 {
                     grapplePoint = hit.point;
 
@@ -353,12 +465,12 @@ namespace HookGun
 
                     SpawnTrail(Trail, hit.point);
 
+                    Debug.Log("hit gameobject layer");
+                    Debug.Log(hit.transform.gameObject.layer);
+
                     //Invoke(nameof(ExecuteGrapple), grappleDelayTime);
 
                     targetPosition = grapplePoint;
-
-                    HookGO.transform.position = targetPosition;
-
 
                     //------------TELEPORT --------
                     //Vector3 position = base.playerHeldBy.transform.position;
