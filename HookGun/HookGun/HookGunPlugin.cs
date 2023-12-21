@@ -26,7 +26,7 @@ namespace HookGun
 
         private const string MODUID = "com.BLKNeko.HookGun";
         private const string MODNAME = "HookGun";
-        private const string MODVERSION = "1.1.1.0";
+        private const string MODVERSION = "1.3.2.0";
 
         private readonly Harmony harmony = new Harmony(MODUID);
 
@@ -36,6 +36,10 @@ namespace HookGun
 
 
         public static ConfigEntry<int> itemPrice { get; set; }
+
+        public static ConfigEntry<float> itemCooldown { get; set; }
+
+        public static ConfigEntry<float> energyCost { get; set; }
 
 
 
@@ -88,6 +92,21 @@ namespace HookGun
             );
 
 
+            itemCooldown = Config.Bind<float>(
+            "ItemCooldown",
+            "Cooldown",
+                2f,
+            "This is the item cooldown, my default is 2, [FLOAT 0.5,1.8,18.9,...]"
+            );
+
+            energyCost = Config.Bind<float>(
+            "EnergyCost",
+            "Cost",
+                0.05f,
+            "This is the item energy cost of activation, my default is 0.05, the MAX energy is 1f so 0.05 give you 20 sucessfull activations [FLOAT 0.01,0.1,1 -- DON'T USE MORE THAN 1]"
+            );
+
+
 
             //Debug.Log("HGItem");
             //Debug.Log(Assets.HGItem);
@@ -117,7 +136,7 @@ namespace HookGun
 
             ///public PlayerControllerB[] players;
 
-            public Transform gunTip;
+            //public Transform gunTip;
             //public LayerMask whatIsGrappleable = 1 << 6 | 1 << 8 | 1 << 9 | 1 << 11 | 1 << 12 | 1 << 20 | 1 << 21 | 1 << 24 | 1 << 25 | 1 << 26 | 1 << 27 | 1 << 28;
             //public LayerMask whatIsGrappleable;
             public LayerMask whatIsGrappleable = 1 << 8 | 1 << 9 | 1 << 12 | 1 << 15 | 1 << 25 | 1 << 26 | 1 << 27;
@@ -150,6 +169,7 @@ namespace HookGun
 
             public static bool NoDmg = false;
 
+
             private Vector3 grapplePoint = Vector3.zero;
 
             private Vector3 targetPosition = Vector3.zero;
@@ -179,9 +199,10 @@ namespace HookGun
 
                 grabbable = true;
                 grabbableToEnemies = true;
-                useCooldown = 2f;
+                useCooldown = itemCooldown.Value;
                 insertedBattery = new Battery(false, 1);
                 mainObjectRenderer = GetComponent<MeshRenderer>();
+
 
                 //Debug.Log("Item this");
                 //Debug.Log(this);
@@ -219,6 +240,15 @@ namespace HookGun
 
                 if (this.isHeld)
                 {
+
+                    if(this.currentUseCooldown <= 0 && insertedBattery.charge > 0)
+                    {
+                        this.gameObject.transform.Find("HookMesh").gameObject.active = true;
+                    }
+                    else
+                    {
+                        this.gameObject.transform.Find("HookMesh").gameObject.active = false;
+                    }
 
 
                     if (pulling && targetPosition != null && targetPosition != Vector3.zero && !base.playerHeldBy.isPlayerDead)
@@ -353,10 +383,10 @@ namespace HookGun
 
 
 
-                if (insertedBattery.charge >= 0.05f)
+                if (insertedBattery.charge >= energyCost.Value)
                 {
-                    insertedBattery.charge -= 0.05f;
-                    if (insertedBattery.charge < 0.05f) insertedBattery.charge = 0;
+                    insertedBattery.charge -= energyCost.Value;
+                    if (insertedBattery.charge < energyCost.Value) insertedBattery.charge = 0;
 
                     //audioSource.PlayOneShot(shootSound);
                     audioSource.PlayOneShot(Assets.ShootSFX);
@@ -416,6 +446,9 @@ namespace HookGun
 
                 //RaycastHit hit;
 
+                
+
+
 
                 if (Physics.Raycast(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, out hit, maxGrappleDistance, whatIsGrappleableToPull))
                 {
@@ -423,8 +456,8 @@ namespace HookGun
 
                     SpawnTrail(Trail, hit.point);
 
-                    Debug.Log("hit gameobject layer");
-                    Debug.Log(hit.transform.gameObject.layer);
+                    //Debug.Log("hit gameobject layer");
+                    //Debug.Log(hit.transform.gameObject.layer);
 
 
                     targetPosition = grapplePoint;
@@ -447,7 +480,7 @@ namespace HookGun
 
                     audioSource.PlayOneShot(Assets.HitSFX);
 
-                    Debug.Log("PULLING");
+                    //Debug.Log("PULLING");
 
                 }
                 else if (Physics.Raycast(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, out hit, maxGrappleDistance, whatIsGrappleable))
@@ -465,8 +498,8 @@ namespace HookGun
 
                     SpawnTrail(Trail, hit.point);
 
-                    Debug.Log("hit gameobject layer");
-                    Debug.Log(hit.transform.gameObject.layer);
+                    //Debug.Log("hit gameobject layer");
+                    //Debug.Log(hit.transform.gameObject.layer);
 
                     //Invoke(nameof(ExecuteGrapple), grappleDelayTime);
 
@@ -504,7 +537,7 @@ namespace HookGun
 
                     Trail.gameObject.AddComponent<LineRendererFadeOut>();
 
-                    insertedBattery.charge += 0.05f;
+                    insertedBattery.charge += energyCost.Value;
 
                     //SpawnTrail(Trail, hit.point);
 

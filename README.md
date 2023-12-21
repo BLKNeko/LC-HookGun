@@ -20,6 +20,8 @@ Purchase from the store.
 
 # Changelog
 - V 1.0.0 Posted
+- V 1.1.1 Added pull function for the HookGun, probably fixed the shoot failing bug and added price configuration
+- V 1.3.2 Added additional configurations for the mod, including cooldown and energy cost settings. The hook tip now functions as a visual cooldown tracker. Adjusted the gun position slightly for a better fit in hand.
 
 # Donations
 - Please remember that this mod is FREE and will always be. I made it hoping that you would enjoy and have fun!
