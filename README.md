@@ -8,6 +8,10 @@ Place the .dll file inside \BepInEx\plugins
 # How To Get Item:
 Purchase from the store.
 
+# How to Use the Item:
+- Point at a wall or a ship to be pulled toward that surface.
+- Target a prop to bring it toward you.
+
 # Screenshots
 ![](https://i.imgur.com/TIhtI9F.png)
 ![](https://i.imgur.com/aLx6Rst.png)
@@ -22,6 +26,7 @@ Purchase from the store.
 - V 1.0.0 Posted
 - V 1.1.1 Added pull function for the HookGun, probably fixed the shoot failing bug and added price configuration
 - V 1.3.2 Added additional configurations for the mod, including cooldown and energy cost settings. The hook tip now functions as a visual cooldown tracker. Adjusted the gun position slightly for a better fit in hand.
+- V 1.3.4 Hoping for a fix to the random damage caused by using the grappling hook.
 
 # Donations
 - Please remember that this mod is FREE and will always be. I made it hoping that you would enjoy and have fun!

@@ -26,7 +26,7 @@ namespace HookGun
 
         private const string MODUID = "com.BLKNeko.HookGun";
         private const string MODNAME = "HookGun";
-        private const string MODVERSION = "1.3.2.0";
+        private const string MODVERSION = "1.3.4.1";
 
         private readonly Harmony harmony = new Harmony(MODUID);
 
@@ -153,7 +153,7 @@ namespace HookGun
             public float grappleDelayTime = 1f;
             public float overshootYAxis = 1.5f;
             public float HookSpeed = 48f;
-            public float OkDistance = 0.5f;
+            public float OkDistance = 1f;
             public float HookmaxTimer = 6f;
 
             public float HookTimer = 0;
@@ -166,6 +166,10 @@ namespace HookGun
             public static bool DisableJump;
             public static bool DisableFall;
             private bool grapplingSlowY = false;
+
+            private bool JumpNoDmg = true;
+
+            public static bool isJumping = false;
 
             public static bool NoDmg = false;
 
@@ -241,7 +245,8 @@ namespace HookGun
                 if (this.isHeld)
                 {
 
-                    if(this.currentUseCooldown <= 0 && insertedBattery.charge > 0)
+
+                    if (this.currentUseCooldown <= 0 && insertedBattery.charge > 0)
                     {
                         this.gameObject.transform.Find("HookMesh").gameObject.active = true;
                     }
@@ -294,8 +299,15 @@ namespace HookGun
                         {
                             //grappling = false;
                             Invoke(nameof(backToNormal), 1f);
-                            Invoke(nameof(enableDamage), 2f);
+                            Invoke(nameof(enableDamage), 4f);
                             HookTimer = 0f;
+                            HookSpeed = 0f;
+                            forces = Vector3.zero;
+                            grappling = false;
+                            targetPosition = Vector3.zero;
+                            playerHeldBy.ResetFallGravity();
+                            playerHeldBy.averageVelocity = 0f;
+                            playerHeldBy.externalForces = Vector3.zero;
                         }
                         else
                         {
@@ -337,7 +349,12 @@ namespace HookGun
                             grappling = false;
                             targetPosition = Vector3.zero;
                             Invoke(nameof(backToNormal), 2f);
-                            Invoke(nameof(enableDamage), 5f);
+                            Invoke(nameof(enableDamage), 8f);
+                            playerHeldBy.ResetFallGravity();
+                            playerHeldBy.averageVelocity = 0f;
+                            playerHeldBy.externalForces = Vector3.zero;
+                            //playerHeldBy.TeleportPlayer(targetPosition);
+                            //playerHeldBy.StartCoroutine("PlayerJump");
 
                         }
 
@@ -559,6 +576,9 @@ namespace HookGun
                 forces = Vector3.zero;
                 grappling = false;
                 targetPosition = Vector3.zero;
+                playerHeldBy.ResetFallGravity();
+                playerHeldBy.averageVelocity = 0f;
+                playerHeldBy.externalForces = Vector3.zero;
 
 
             }
