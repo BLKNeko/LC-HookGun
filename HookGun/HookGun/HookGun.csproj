@@ -40,11 +40,11 @@
     <Reference Include="BepInEx">
       <HintPath>..\..\libs\BepInEx.dll</HintPath>
     </Reference>
-    <Reference Include="LC_API">
-      <HintPath>..\..\libs\LC_API.dll</HintPath>
-    </Reference>
     <Reference Include="LethalLib">
       <HintPath>..\..\libs\LethalLib.dll</HintPath>
+    </Reference>
+    <Reference Include="ReservedItemSlotCore">
+      <HintPath>..\..\libs\ReservedItemSlotCore.dll</HintPath>
     </Reference>
     <Reference Include="RoR2">
       <HintPath>..\..\..\..\..\Risk Of Rain 2\RoR DragonBall Hit\RoR2-DBZ-Hit\libs\RoR2.dll</HintPath>
@@ -92,6 +92,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PluginInfo.cs" />
     <Compile Include="HookGunPlugin.cs" />
     <Compile Include="Patches\AllowDeathPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

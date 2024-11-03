@@ -5,11 +5,14 @@ using GameNetcodeStuff;
 using HarmonyLib;
 using HookGun.Patches;
 using LethalLib.Modules;
+using ReservedItemSlotCore.Config;
+using ReservedItemSlotCore.Data;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Netcode;
@@ -17,22 +20,28 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Windows;
 
 namespace HookGun
 {
-    [BepInPlugin(MODUID, MODNAME, MODVERSION)]
+    [BepInDependency("FlipMods.ReservedItemSlotCore", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInPlugin(PluginInfo.MODUID, PluginInfo.MODNAME, PluginInfo.MODVERSION)]
     public class HookGunPlugin : BaseUnityPlugin
     {
 
-        private const string MODUID = "com.BLKNeko.HookGun";
-        private const string MODNAME = "HookGun";
-        private const string MODVERSION = "1.3.4.1";
-
-        private readonly Harmony harmony = new Harmony(MODUID);
+        private readonly Harmony harmony = new Harmony(PluginInfo.MODUID);
 
         private static HookGunPlugin Instance;
 
         internal ManualLogSource mls;
+
+        public static ReservedItemSlotData HGRSSlotData;
+        public static ReservedItemData HGRSData;
+
+        public static List<ReservedItemData> HGRSadditionalItemData = new List<ReservedItemData>();
+
+        private Item IHookGun;
+        private Item IRSHookGun;
 
 
         public static ConfigEntry<int> itemPrice { get; set; }
@@ -51,11 +60,12 @@ namespace HookGun
                 Instance = this;
             }
 
-            mls = BepInEx.Logging.Logger.CreateLogSource(MODUID);
+            mls = BepInEx.Logging.Logger.CreateLogSource(PluginInfo.MODUID);
 
             //mls.LogInfo("HookGun Awaken!");
 
             harmony.PatchAll(typeof(HookGunPlugin));
+            //harmony.PatchAll(typeof(RSHookGun));
             harmony.PatchAll(typeof(AllowDeathPatch));
             harmony.PatchAll();
 
@@ -111,18 +121,65 @@ namespace HookGun
             //Debug.Log("HGItem");
             //Debug.Log(Assets.HGItem);
 
-            Item TestHook = Assets.HGItem;
+            //Item TestHook = Assets.HGItem;
 
-            HookGunScript HScript = TestHook.spawnPrefab.AddComponent<HookGunScript>();
-            HScript.itemProperties = TestHook;
+            //HookGunScript HScript = TestHook.spawnPrefab.AddComponent<HookGunScript>();
+            //HScript.itemProperties = TestHook;
 
-            Items.RegisterShopItem(TestHook, itemPrice.Value);
-            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(TestHook.spawnPrefab);
+            //Items.RegisterShopItem(TestHook, itemPrice.Value);
+            //LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(TestHook.spawnPrefab);
 
+            IHookGun = Assets.HGItem;
+
+            HookGunScript HScript = IHookGun.spawnPrefab.AddComponent<HookGunScript>();
+            HScript.itemProperties = IHookGun;
+
+            Items.RegisterShopItem(IHookGun, itemPrice.Value);
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(IHookGun.spawnPrefab);
+
+            // This will register your ReservedItemSlotData and will be added to the game if the host is running the mod
+            // Arguments: ItemSlotName (format is not too important), ItemSlotPriority, ItemSlotPrice
+            //ReservedItemSlotData HGReservedItemSlot = ReservedItemSlotData.CreateReservedItemSlotData("HGRS", 23, itemPrice.Value);
+
+            // Create your ReservedItemData for your item
+            // You can also add the extra arguments to allow this item to be shown on players while holstered. (refer to the previous example)
+            //ReservedItemData HGReservedItemData = new ReservedItemData("HookGunRS");
+
+            // Add the ReservedItemData to your ReservedItemSlotData and you're done!
+            //HGReservedItemSlot.AddItemToReservedItemSlot(HGReservedItemData);
+
+            IRSHookGun = Assets.HGItemRS;
+            //HookRS.itemName = "HookGunRS";
+
+
+            HookGunScript HScriptRS = IRSHookGun.spawnPrefab.AddComponent<HookGunScript>();
+            HScriptRS.itemProperties = IRSHookGun;
+
+            //HookRS.itemName = "RSHookGun";
+            //HookRS.spawnPrefab.name = "RSHookGun";
+            Items.RegisterShopItem(IRSHookGun, itemPrice.Value);
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(IRSHookGun.spawnPrefab);
+
+
+            CreateReservedItemSlots();
+
+            //Debug.Log("HG SP");
+            //Debug.Log(IHookGun.spawnPrefab);
+            //Debug.Log("HGRS SP");
+            //Debug.Log(IRSHookGun.spawnPrefab);
 
 
 
         }
+
+        void CreateReservedItemSlots()
+        {
+            HGRSSlotData = ReservedItemSlotData.CreateReservedItemSlotData("RSHookGun", 23, itemPrice.Value);
+            HGRSData = HGRSSlotData.AddItemToReservedItemSlot(new ReservedItemData("RSHookGun", PlayerBone.RightHand, new Vector3(-.2f, .25f, 0f), new Vector3(0, 90, 90)));
+        }
+
+
+
 
 
 
@@ -141,6 +198,7 @@ namespace HookGun
             //public LayerMask whatIsGrappleable;
             public LayerMask whatIsGrappleable = 1 << 8 | 1 << 9 | 1 << 12 | 1 << 15 | 1 << 25 | 1 << 26 | 1 << 27;
             public LayerMask whatIsGrappleableToPull = 1 << 6 | 1 << 20;
+            public LayerMask whatIsGrappleableNew = 1 << 8 | 1 << 9 | 1 << 11 | 1 << 14 | 1 << 16 | 1 << 17 | 1 << 21 | 1 << 24 | 1 << 25;
 
             // 0 - various random objects
             // 8 - floor
@@ -408,6 +466,7 @@ namespace HookGun
                     //audioSource.PlayOneShot(shootSound);
                     audioSource.PlayOneShot(Assets.ShootSFX);
                     StartGrapple();
+                    //TestGrapple();
 
 
 
@@ -444,8 +503,73 @@ namespace HookGun
 
             }
 
+            /*
+             
+            1 << 8 | 1 << 9 | 1 << 11 | 1 << 14 | 1 << 16 | 1 << 17 | 1 << 21 | 1 << 24 | 1 << 25;
+
+            [Info   : Unity Log] O jogador colide com a camada TransparentFX 
+            [Info   : Unity Log] O jogador colide com a camada Ignore Raycast
+            [Info   : Unity Log] O jogador NÃO colide com a camada Player
+            [Info   : Unity Log] O jogador colide com a camada Water
+            [Info   : Unity Log] O jogador colide com a camada UI
+            [Info   : Unity Log] O jogador NÃO colide com a camada Props
+            [Info   : Unity Log] O jogador NÃO colide com a camada HelmetVisor
+            [Info   : Unity Log] O jogador colide com a camada Room
+            [Info   : Unity Log] O jogador colide com a camada InteractableObject
+            [Info   : Unity Log] O jogador NÃO colide com a camada Foliage
+            [Info   : Unity Log] O jogador colide com a camada Colliders 11
+            [Info   : Unity Log] O jogador NÃO colide com a camada PhysicsObject 12
+            [Info   : Unity Log] O jogador colide com a camada Triggers
+            [Info   : Unity Log] O jogador NÃO colide com a camada MapRadar
+            [Info   : Unity Log] O jogador NÃO colide com a camada NavigationSurface
+            [Info   : Unity Log] O jogador colide com a camada RoomLight
+            [Info   : Unity Log] O jogador colide com a camada Anomaly 17
+            [Info   : Unity Log] O jogador NÃO colide com a camada LineOfSight
+            [Info   : Unity Log] O jogador colide com a camada Enemies 19
+            [Info   : Unity Log] O jogador NÃO colide com a camada PlayerRagdoll
+            [Info   : Unity Log] O jogador colide com a camada MapHazards 21
+            [Info   : Unity Log] O jogador NÃO colide com a camada ScanNode
+            [Info   : Unity Log] O jogador colide com a camada EnemiesNotRendered
+            [Info   : Unity Log] O jogador colide com a camada MiscLevelGeometry
+            [Info   : Unity Log] O jogador colide com a camada Terrain
+            [Info   : Unity Log] O jogador NÃO colide com a camada PlaceableShipObjects
+            [Info   : Unity Log] O jogador NÃO colide com a camada PlacementBlocker
+             
+             */
+
 
             //-------------
+
+            private void TestGrapple()
+            {
+
+                LineRenderer Trail = Instantiate(this, this.gameObject.transform.GetChild(0)).GetComponent<LineRenderer>();
+
+                Debug.DrawRay(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, Color.green, 10f);
+
+                if (Physics.Raycast(base.playerHeldBy.gameplayCamera.transform.position, base.playerHeldBy.gameplayCamera.transform.forward, out hit, maxGrappleDistance, whatIsGrappleableNew))
+                {
+                    SpawnTrail(Trail, hit.point);
+
+                }
+
+                for(int i = 0; i < 48; i++)
+                {
+                    if (Physics.GetIgnoreLayerCollision(3, i))
+                    {
+                        Debug.Log("O jogador NÃO colide com a camada " + LayerMask.LayerToName(i));
+                    }
+                    else
+                    {
+                        Debug.Log("O jogador colide com a camada " + LayerMask.LayerToName(i));
+                    }
+                }
+
+
+
+            }
+
+
 
             private void StartGrapple()
             {
@@ -594,6 +718,7 @@ namespace HookGun
 
 
 
+
         public class LineRendererFadeOut : MonoBehaviour
         {
             public LineRenderer lineRenderer;
@@ -637,7 +762,7 @@ namespace HookGun
 
 
 
-        class Assets
+        public class Assets
         {
 
             //-------------------ASSETS
@@ -650,6 +775,7 @@ namespace HookGun
             private static string[] assetNames = new string[0];
 
             public static Item HGItem;
+            public static Item HGItemRS;
 
             public static Sprite HGSprite;
 
@@ -692,6 +818,7 @@ namespace HookGun
                 NoAmmoSFX = mainAssetBundle.LoadAsset<AudioClip>("NoAmmoSFX");
 
                 HGItem = mainAssetBundle.LoadAsset<Item>("HookGunItem");
+                HGItemRS = mainAssetBundle.LoadAsset<Item>("RSHookGunItem");
 
 
             }
