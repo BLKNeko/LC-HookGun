@@ -16,7 +16,7 @@ namespace HookGun.Patches
         static bool ChangeAllowDeath()
         {
 
-            if (HookGunPlugin.HookGunScript.NoDmg)
+            if (HookGunMain.HookGunScript.NoDmg)
             {
                 return false;
                 

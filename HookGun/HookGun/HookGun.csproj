@@ -92,6 +92,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HookGunMain.cs" />
+    <Compile Include="RSHookGunMain.cs" />
     <Compile Include="PluginInfo.cs" />
     <Compile Include="HookGunPlugin.cs" />
     <Compile Include="Patches\AllowDeathPatch.cs" />
