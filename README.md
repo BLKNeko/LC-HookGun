@@ -28,6 +28,7 @@ Purchase from the store.
 - V 1.3.2 Added additional configurations for the mod, including cooldown and energy cost settings. The hook tip now functions as a visual cooldown tracker. Adjusted the gun position slightly for a better fit in hand.
 - V 1.3.4 Hoping for a fix to the random damage caused by using the grappling hook.
 - V 1.4.5 Fixed some incompatibility issues caused by a dependency and added compatibility with the ReservedSlot MOD.
+- V 1.5.0 This mod no longer requires the ReserveSlot MOD as a dependency, but it remains fully compatible with it. Why...
 
 # Donations
 - Please remember that this mod is FREE and will always be. I made it hoping that you would enjoy and have fun!
